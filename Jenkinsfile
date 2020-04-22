@@ -40,12 +40,12 @@ pipeline {
                     script {
                         sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$staging \"docker pull adamparratt87/train-schedule:${env.BUILD_NUMBER}\""
                         try {
-                            sh "sshpass -p '$USERPASS' -v shh -o StrictHostKeyChecking=no $USERNAME@$staging \"docker stop train-schedule\""
-                            sh "sshpass -p '$USERPASS' -v shh -o StrictHostKeyChecking=no $USERNAME@$staging \"docker rm train-schedule\""
+                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$staging \"docker stop train-schedule\""
+                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$staging \"docker rm train-schedule\""
                         } catch (err) {
                             echo: 'caught error: $err'
                         }
-                        sh "sshpass -p '$USERPASS' -v shh -o StrictHostKeyChecking=no $USERNAME@$staging \"docker run --restart always --name train-schedule -p 8080:8080 -d adamparratt87/train-schedule:${env.BUILD_NUMBER}\""
+                        sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$staging \"docker run --restart always --name train-schedule -p 8080:8080 -d adamparratt87/train-schedule:${env.BUILD_NUMBER}\""
                     }
                 }
             }
@@ -61,12 +61,12 @@ pipeline {
                     script {
                         sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$production \"docker pull adamparratt87/train-schedule:${env.BUILD_NUMBER}\""
                         try {
-                            sh "sshpass -p '$USERPASS' -v shh -o StrictHostKeyChecking=no $USERNAME@$production \"docker stop train-schedule\""
-                            sh "sshpass -p '$USERPASS' -v shh -o StrictHostKeyChecking=no $USERNAME@$production \"docker rm train-schedule\""
+                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$production \"docker stop train-schedule\""
+                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$production \"docker rm train-schedule\""
                         } catch (err) {
                             echo: 'caught error: $err'
                         }
-                        sh "sshpass -p '$USERPASS' -v shh -o StrictHostKeyChecking=no $USERNAME@$production \"docker run --restart always --name train-schedule -p 8080:8080 -d adamparratt87/train-schedule:${env.BUILD_NUMBER}\""
+                        sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$production \"docker run --restart always --name train-schedule -p 8080:8080 -d adamparratt87/train-schedule:${env.BUILD_NUMBER}\""
                     }
                 } 
             }
