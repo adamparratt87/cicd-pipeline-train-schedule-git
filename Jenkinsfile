@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    environment {
+        DOCKER_IMAGE_NAME = "adamparratt87/train-schedule"
+    }
     stages {
         stage('Build') {
             steps {
@@ -14,7 +17,7 @@ pipeline {
             }
             steps {
                 script {
-                    app = docker.build("adamparratt87/train-schedule")
+                    app = docker.build(DOCKER_IMAGE_NAME)
                     app.inside {
                         sh 'echo $(curl localhost:8080)'
                     }
@@ -31,44 +34,18 @@ pipeline {
                 }
             }
         }
-        stage('DeployToStaging') {
-            when {
-                branch 'master'
-            }
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'webserver_login', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
-                    script {
-                        sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$staging \"docker pull adamparratt87/train-schedule:${env.BUILD_NUMBER}\""
-                        try {
-                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$staging \"docker stop train-schedule\""
-                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$staging \"docker rm train-schedule\""
-                        } catch (err) {
-                            echo: 'caught error: $err'
-                        }
-                        sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$staging \"docker run --restart always --name train-schedule -p 8080:8080 -d adamparratt87/train-schedule:${env.BUILD_NUMBER}\""
-                    }
-                }
-            }
-        }
         stage('DeployToProduction') {
             when {
                 branch 'master'
             }
             steps {
-                input 'Does the staging environment look OK?'
+                input 'Deploy to Production?'
                 milestone(1)
-                withCredentials([usernamePassword(credentialsId: 'webserver_login', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
-                    script {
-                        sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$production \"docker pull adamparratt87/train-schedule:${env.BUILD_NUMBER}\""
-                        try {
-                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$production \"docker stop train-schedule\""
-                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$production \"docker rm train-schedule\""
-                        } catch (err) {
-                            echo: 'caught error: $err'
-                        }
-                        sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$production \"docker run --restart always --name train-schedule -p 8080:8080 -d adamparratt87/train-schedule:${env.BUILD_NUMBER}\""
-                    }
-                } 
+                kubernetesDeploy {
+                   kubeconfigId: 'kubeconfig'
+                   configs: 'train-schedule-kube.yml'
+                   enableConfigSubstitution: true
+                }
             }
         }
     }
